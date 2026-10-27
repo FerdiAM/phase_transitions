@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Phase Transitions Simulation</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar for control panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .glow-effect {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+        /* Gradient Slider */
+        input[type=range] {
+            accent-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100 overflow-hidden select-none">
+
+    <!-- Left/Top Control Sidebar -->
+    <div class="w-full md:w-96 bg-slate-900 border-r border-slate-800 flex flex-col h-auto md:h-full z-10 shadow-xl flex-shrink-0">
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
+                    <i class="fa-solid font-bold fa-atom text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-white">Molecular Phase Lab</h1>
+                    <p class="text-xs text-slate-400">Interactive Kinetic Energy Simulator</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Control Content -->
+        <div class="p-4 space-y-5 overflow-y-auto flex-1">
+            
+            <!-- Phase Preset Selector -->
+            <div>
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2 block">Phase Transition Scenarios</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btn-evap" onclick="setPreset('evaporation')" class="preset-btn px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-left transition flex flex-col justify-between group active text-blue-400 border-blue-500/50">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-xs text-slate-200">Evaporation</span>
+                            <i class="fa-solid fa-water text-xs text-blue-400"></i>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Liquid → Gas</span>
+                    </button>
+
+                    <button id="btn-cond" onclick="setPreset('condensation')" class="preset-btn px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-left transition flex flex-col justify-between group">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-xs text-slate-200">Condensation</span>
+                            <i class="fa-solid fa-cloud-rain text-xs text-cyan-400"></i>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Gas → Liquid</span>
+                    </button>
+
+                    <button id="btn-subl" onclick="setPreset('sublimation')" class="preset-btn px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-left transition flex flex-col justify-between group">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-xs text-slate-200">Sublimation</span>
+                            <i class="fa-solid fa-snowflake text-xs text-purple-400"></i>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Solid → Gas</span>
+                    </button>
+
+                    <button id="btn-depo" onclick="setPreset('deposition')" class="preset-btn px-3 py-2.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700/80 text-left transition flex flex-col justify-between group">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-semibold text-xs text-slate-200">Deposition</span>
+                            <i class="fa-solid fa-cubes text-xs text-emerald-400"></i>
+                        </div>
+                        <span class="text-[10px] text-slate-400">Gas → Solid</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Temperature Slider -->
+            <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-temperature-half text-amber-400"></i> Thermal Energy / Temp
+                    </span>
+                    <span id="temp-display" class="font-mono text-sm font-bold text-amber-400">300 K</span>
+                </div>
+                <input type="range" id="temp-slider" min="50" max="800" value="300" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                    <span>50K (Solid)</span>
+                    <span>300K (Liquid)</span>
+                    <span>800K (Hot Gas)</span>
+                </div>
+            </div>
+
+            <!-- Toggle Overlays -->
+            <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <span class="text-xs font-semibold text-slate-400 block mb-1">Visual Displays</span>
+                <label class="flex items-center justify-between cursor-pointer text-xs text-slate-300 hover:text-white">
+                    <span><i class="fa-solid fa-circle-dot mr-1.5 text-rose-400"></i> Highlight High-E Escapes</span>
+                    <input type="checkbox" id="toggle-highlights" checked class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer text-xs text-slate-300 hover:text-white">
+                    <span><i class="fa-solid fa-arrows-up-down-left-right mr-1.5 text-blue-400"></i> Velocity Vectors</span>
+                    <input type="checkbox" id="toggle-vectors" class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                </label>
+                <label class="flex items-center justify-between cursor-pointer text-xs text-slate-300 hover:text-white">
+                    <span><i class="fa-solid fa-chart-simple mr-1.5 text-emerald-400"></i> Maxwell-Boltzmann Chart</span>
+                    <input type="checkbox" id="toggle-chart" checked class="rounded border-slate-700 text-blue-600 focus:ring-0">
+                </label>
+            </div>
+
+            <!-- Context Info Card -->
+            <div id="info-card" class="bg-blue-950/30 border border-blue-900/40 p-3.5 rounded-xl space-y-1.5 text-xs">
+                <div class="font-bold text-blue-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info"></i> <span id="info-title">Evaporation Dynamics</span>
+                </div>
+                <p id="info-body" class="text-slate-300 leading-relaxed text-[11px]">
+                    Only molecules with kinetic energy exceeding the intermolecular binding threshold near the liquid surface can break free into the gas phase. Because high-energy molecules escape, the average energy of the remaining liquid drops (cooling effect).
+                </p>
+            </div>
+
+            <!-- Live Stats Widget -->
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                <div class="bg-slate-800/40 border border-slate-800 p-2 rounded-lg">
+                    <div class="text-[10px] text-slate-400 uppercase">Transitions Count</div>
+                    <div id="stat-transitions" class="text-lg font-bold text-amber-400 font-mono">0</div>
+                </div>
+                <div class="bg-slate-800/40 border border-slate-800 p-2 rounded-lg">
+                    <div class="text-[10px] text-slate-400 uppercase">Avg Kinetic Energy</div>
+                    <div id="stat-avg-ke" class="text-lg font-bold text-cyan-400 font-mono">0.0</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Simulation Control Bar at Bottom -->
+        <div class="p-3 border-t border-slate-800 bg-slate-900 flex justify-between items-center gap-2">
+            <button id="btn-pause" onclick="togglePause()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg text-xs transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-pause" id="pause-icon"></i> <span id="pause-text">Pause</span>
+            </button>
+            <button onclick="resetSimulation()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition" title="Reset Simulation">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Canvas & Visualization Area -->
+    <div class="flex-1 flex flex-col h-full relative overflow-hidden bg-slate-950">
+        
+        <!-- Energy Spectrum Legend Banner -->
+        <div class="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between bg-slate-900/90 border border-slate-800 px-4 py-2.5 rounded-xl backdrop-blur gap-3">
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <span>Kinetic Energy (Speed):</span>
+            </div>
+            <!-- Color Gradient Bar -->
+            <div class="flex-1 min-w-[150px] max-w-md flex items-center gap-2">
+                <span class="text-[10px] font-mono text-cyan-400">Low (Cold)</span>
+                <div class="h-2.5 flex-1 rounded-full bg-gradient-to-r from-cyan-500 via-indigo-500 via-purple-500 via-rose-500 to-amber-400 border border-slate-700/50"></div>
+                <span class="text-[10px] font-mono text-amber-400">High (Hot)</span>
+            </div>
+            <div class="text-xs text-slate-400 font-mono hidden lg:block">
+                Particles: <span id="particle-count" class="text-white font-bold">120</span>
+            </div>
+        </div>
+
+        <!-- Main Simulation Canvas -->
+        <div class="flex-1 relative w-full h-full">
+            <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            
+            <!-- Floating Maxwell-Boltzmann Distribution Canvas HUD Overlay -->
+            <div id="chart-container" class="absolute bottom-4 right-4 bg-slate-900/85 border border-slate-800 p-3 rounded-xl backdrop-blur shadow-2xl pointer-events-none transition-opacity duration-300 w-64 md:w-80">
+                <div class="text-[11px] font-semibold text-slate-300 mb-1 flex justify-between items-center">
+                    <span>Speed Distribution (Maxwell-Boltzmann)</span>
+                    <span class="text-[9px] text-rose-400 font-mono">-- Escape Energy</span>
+                </div>
+                <canvas id="chartCanvas" width="280" height="100" class="w-full h-24 block"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation Script Logic -->
+    <script>
+        // Simulation Canvas setup
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const chartCanvas = document.getElementById('chartCanvas');
+        const chartCtx = chartCanvas.getContext('2d');
+
+        // State Variables
+        let width = 0, height = 0;
+        let particles = [];
+        let currentMode = 'evaporation';
+        let isPaused = false;
+        let temperature = 300; // Kelvin
+        let transitionCount = 0;
+        let animationFrameId;
+
+        // UI Controls & Toggles
+        const showHighlights = () => document.getElementById('toggle-highlights').checked;
+        const showVectors = () => document.getElementById('toggle-vectors').checked;
+        const showChart = () => document.getElementById('toggle-chart').checked;
+
+        // Physics Parameters
+        const NUM_PARTICLES = 130;
+        const PARTICLE_RADIUS = 7;
+        const BOLTZMANN_K = 0.015; // Scaling factor for speed
+        const GRAVITY = 0.08;
+        const INTERMOLECULAR_ATTRACTION = 0.22; // Surface tension / binding force
+        const ESCAPE_ENERGY_THRESHOLD = 7.5; // KE required to break free into gas phase
+
+        // Presets Info Text
+        const MODE_INFO = {
+            evaporation: {
+                title: 'Evaporation (Liquid → Gas)',
+                body: 'Molecules in liquid phase undergo continuous collisions resulting in a speed distribution. High-energy molecules near the surface exceed binding attractive forces and escape into the gas phase, cooling the liquid.'
+            },
+            condensation: {
+                title: 'Condensation (Gas → Liquid)',
+                body: 'Gas molecules lose kinetic energy upon collision with cooler liquid surface or boundary layers. When energy drops below the attraction threshold, they get trapped back into the liquid cluster.'
+            },
+            sublimation: {
+                title: 'Sublimation (Solid → Gas)',
+                body: 'Particles in a solid vibrate around lattice equilibrium positions. Exceptional energetic fluctuations allow surface molecules to break free directly into the gas phase without forming a liquid.'
+            },
+            deposition: {
+                title: 'Deposition (Gas → Solid)',
+                body: 'Energetic gas molecules collide directly with a cold substrate/crystal lattice, quickly shedding thermal energy and becoming locked directly into the rigid solid structure.'
+            }
+        };
+
+        // Particle Class
+        class Particle {
+            constructor(x, y, vx, vy, phase = 'liquid') {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.radius = PARTICLE_RADIUS;
+                this.mass = 1;
+                this.phase = phase; // 'solid', 'liquid', 'gas'
+                
+                // Solid equilibrium lattice position
+                this.originX = x;
+                this.originY = y;
+                
+                // Transition highlight animation frame timer
+                this.highlightTimer = 0;
+            }
+
+            get kineticEnergy() {
+                return 0.5 * this.mass * (this.vx * this.vx + this.vy * this.vy);
+            }
+
+            get speed() {
+                return Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            }
+
+            // Get color based on Kinetic Energy / Speed
+            getColor() {
+                const speed = this.speed;
+                // Speed scale: 0 to 10
+                const norm = Math.min(speed / 8, 1);
+                
+                // Color gradient map: Cyan (0) -> Indigo (0.25) -> Purple (0.5) -> Pink/Red (0.75) -> Gold/Yellow (1)
+                if (norm < 0.2) {
+                    return '#06b6d4'; // Cyan
+                } else if (norm < 0.4) {
+                    return '#6366f1'; // Indigo
+                } else if (norm < 0.65) {
+                    return '#a855f7'; // Purple
+                } else if (norm < 0.85) {
+                    return '#f43f5e'; // Pink/Rose
+                } else {
+                    return '#fbbf24'; // Yellow/Gold
+                }
+            }
+
+            update() {
+                if (this.highlightTimer > 0) this.highlightTimer--;
+
+                if (this.phase === 'solid') {
+                    // Spring force towards origin lattice point
+                    const k = 0.08;
+                    const damping = 0.92;
+                    const fx = -k * (this.x - this.originX);
+                    const fy = -k * (this.y - this.originY);
+
+                    // Add thermal jitter proportional to temperature
+                    const jitter = (temperature / 300) * 0.4;
+                    this.vx += fx + (Math.random() - 0.5) * jitter;
+                    this.vy += fy + (Math.random() - 0.5) * jitter;
+
+                    this.vx *= damping;
+                    this.vy *= damping;
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Check for sublimation (if speed exceeds escape threshold)
+                    if (currentMode === 'sublimation' && this.kineticEnergy > ESCAPE_ENERGY_THRESHOLD && this.y < height * 0.75) {
+                        this.phase = 'gas';
+                        this.highlightTimer = 45;
+                        transitionCount++;
+                    }
+                } else if (this.phase === 'liquid') {
+                    // Gravity pulls liquid downwards
+                    this.vy += GRAVITY;
+
+                    // Cohesion / surface tension pulling toward center of liquid bulk
+                    const liquidCenterY = height * 0.75;
+                    if (this.y < liquidCenterY) {
+                        // Near surface: pull down slightly to represent surface cohesion
+                        this.vy += INTERMOLECULAR_ATTRACTION;
+                    }
+
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Boundary collision (bottom & sides)
+                    const damping = 0.85;
+                    const margin = 50;
+
+                    if (this.x - this.radius < margin) {
+                        this.x = margin + this.radius;
+                        this.vx *= -damping;
+                    }
+                    if (this.x + this.radius > width - margin) {
+                        this.x = width - margin - this.radius;
+                        this.vx *= -damping;
+                    }
+                    if (this.y + this.radius > height - 30) {
+                        this.y = height - 30 - this.radius;
+                        this.vy *= -damping;
+                    }
+
+                    // Evaporation check: Liquid molecule near surface moving upwards with high KE
+                    if (this.y < height * 0.65 && this.vy < 0 && this.kineticEnergy >= ESCAPE_ENERGY_THRESHOLD) {
+                        this.phase = 'gas';
+                        this.highlightTimer = 60;
+                        transitionCount++;
+                    }
+                } else if (this.phase === 'gas') {
+                    // Free kinetic motion with light wall bounces
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    const margin = 20;
+                    if (this.x - this.radius < margin) {
+                        this.x = margin + this.radius;
+                        this.vx *= -1;
+                    }
+                    if (this.x + this.radius > width - margin) {
+                        this.x = width - margin - this.radius;
+                        this.vx *= -1;
+                    }
+                    if (this.y - this.radius < margin + 40) { // Top ceiling
+                        this.y = margin + 40 + this.radius;
+                        this.vy *= -1;
+                    }
+                    if (this.y + this.radius > height - 20) {
+                        this.y = height - 20 - this.radius;
+                        this.vy *= -1;
+                    }
+
+                    // Condensation / Deposition Check
+                    if (currentMode === 'condensation' && this.y > height * 0.6 && this.kineticEnergy < ESCAPE_ENERGY_THRESHOLD * 0.7) {
+                        this.phase = 'liquid';
+                        this.highlightTimer = 45;
+                        transitionCount++;
+                    } else if (currentMode === 'deposition' && this.y > height * 0.65) {
+                        this.phase = 'solid';
+                        this.originX = Math.max(100, Math.min(width - 100, this.x));
+                        this.originY = this.y;
+                        this.highlightTimer = 45;
+                        transitionCount++;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                const color = this.getColor();
+                
+                // Draw escape/transition halo glow
+                if (showHighlights() && this.highlightTimer > 0) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 6, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(244, 63, 94, ${this.highlightTimer / 60})`;
+                    ctx.fill();
+                    ctx.strokeStyle = '#f43f5e';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Particle Body
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.restore();
+
+                // Velocity Vector Line
+                if (showVectors()) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.x + this.vx * 4, this.y + this.vy * 4);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Particle Collisions Resolution (Elastic 2D)
+        function resolveCollisions() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = p1.radius + p2.radius;
+
+                    if (dist < minDist) {
+                        // Overlap resolution
+                        const angle = Math.atan2(dy, dx);
+                        const targetX = p1.x + Math.cos(angle) * minDist;
+                        const targetY = p1.y + Math.sin(angle) * minDist;
+                        const ax = (targetX - p2.x) * 0.5;
+                        const ay = (targetY - p2.y) * 0.5;
+
+                        p1.x -= ax;
+                        p1.y -= ay;
+                        p2.x += ax;
+                        p2.y += ay;
+
+                        // Velocity exchange
+                        const normalX = dx / (dist || 1);
+                        const normalY = dy / (dist || 1);
+
+                        const relativeVx = p1.vx - p2.vx;
+                        const relativeVy = p1.vy - p2.vy;
+
+                        const speed = relativeVx * normalX + relativeVy * normalY;
+
+                        if (speed < 0) continue; // Moving apart
+
+                        const impulse = speed; // Equal mass
+                        p1.vx -= impulse * normalX;
+                        p1.vy -= impulse * normalY;
+                        p2.vx += impulse * normalX;
+                        p2.vy += impulse * normalY;
+                    }
+                }
+            }
+        }
+
+        // Resize Canvas dynamically
+        function resize() {
+            const container = canvas.parentElement;
+            width = container.clientWidth;
+            height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        // Initialize preset scenario
+        function setPreset(mode) {
+            currentMode = mode;
+            transitionCount = 0;
+
+            // Update UI Active Preset Buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-blue-400', 'border-blue-500/50');
+            });
+            const activeBtn = document.getElementById(`btn-${mode.substring(0, 4)}`);
+            if (activeBtn) activeBtn.classList.add('active', 'text-blue-400', 'border-blue-500/50');
+
+            // Update Information text
+            const info = MODE_INFO[mode];
+            document.getElementById('info-title').innerText = info.title;
+            document.getElementById('info-body').innerText = info.body;
+
+            // Adjust temperature slider & build particle initial state
+            particles = [];
+            const tempSlider = document.getElementById('temp-slider');
+
+            if (mode === 'evaporation') {
+                temperature = 320;
+                tempSlider.value = 320;
+                // Liquid grid at bottom
+                const rows = 5, cols = 22;
+                const startX = width / 2 - (cols * PARTICLE_RADIUS * 2.2) / 2;
+                const startY = height * 0.68;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const speedScale = Math.sqrt(temperature * BOLTZMANN_K);
+                        const vx = (Math.random() - 0.5) * speedScale * 2;
+                        const vy = (Math.random() - 0.5) * speedScale * 2;
+                        particles.push(new Particle(
+                            startX + c * PARTICLE_RADIUS * 2.2,
+                            startY + r * PARTICLE_RADIUS * 2.2,
+                            vx, vy, 'liquid'
+                        ));
+                    }
+                }
+            } else if (mode === 'condensation') {
+                temperature = 220;
+                tempSlider.value = 220;
+                // High density gas at top, small liquid puddle at bottom
+                for (let i = 0; i < 90; i++) {
+                    const speedScale = Math.sqrt(temperature * BOLTZMANN_K) * 1.5;
+                    particles.push(new Particle(
+                        Math.random() * (width - 100) + 50,
+                        Math.random() * (height * 0.5) + 50,
+                        (Math.random() - 0.5) * speedScale,
+                        (Math.random() - 0.5) * speedScale,
+                        'gas'
+                    ));
+                }
+            } else if (mode === 'sublimation') {
+                temperature = 450;
+                tempSlider.value = 450;
+                // Solid crystal lattice at bottom center
+                const rows = 6, cols = 18;
+                const startX = width / 2 - (cols * PARTICLE_RADIUS * 2.1) / 2;
+                const startY = height * 0.7;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const p = new Particle(
+                            startX + c * PARTICLE_RADIUS * 2.1,
+                            startY + r * PARTICLE_RADIUS * 2.1,
+                            0, 0, 'solid'
+                        );
+                        particles.push(p);
+                    }
+                }
+            } else if (mode === 'deposition') {
+                temperature = 100;
+                tempSlider.value = 100;
+                // Gas particles at top moving towards cold crystal substrate at bottom
+                for (let i = 0; i < 70; i++) {
+                    const speedScale = Math.sqrt(temperature * BOLTZMANN_K) * 2;
+                    particles.push(new Particle(
+                        Math.random() * (width - 100) + 50,
+                        Math.random() * (height * 0.4) + 40,
+                        (Math.random() - 0.5) * speedScale,
+                        Math.random() * speedScale + 0.5,
+                        'gas'
+                    ));
+                }
+            }
+            updateTempDisplay();
+        }
+
+        // Temperature Slider Handler
+        document.getElementById('temp-slider').addEventListener('input', (e) => {
+            temperature = parseFloat(e.target.value);
+            updateTempDisplay();
+            
+            // Adjust velocities according to temperature change
+            const thermalFactor = Math.sqrt(temperature / 300);
+            particles.forEach(p => {
+                if (p.phase === 'gas') {
+                    const currentSpeed = p.speed || 1;
+                    const targetSpeed = currentSpeed * 0.05 + thermalFactor * 2;
+                    const scale = targetSpeed / currentSpeed;
+                    p.vx *= scale;
+                    p.vy *= scale;
+                }
+            });
+        });
+
+        function updateTempDisplay() {
+            document.getElementById('temp-display').innerText = `${Math.round(temperature)} K`;
+        }
+
+        // Maxwell-Boltzmann Distribution HUD Drawing
+        function drawSpeedDistributionChart() {
+            const chartContainer = document.getElementById('chart-container');
+            if (!showChart()) {
+                chartContainer.classList.add('opacity-0', 'pointer-events-none');
+                return;
+            }
+            chartContainer.classList.remove('opacity-0');
+
+            chartCtx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
+
+            // Calculate histogram bin counts
+            const numBins = 20;
+            const bins = new Array(numBins).fill(0);
+            const maxSpeed = 10;
+
+            let totalKE = 0;
+            particles.forEach(p => {
+                const spd = p.speed;
+                totalKE += p.kineticEnergy;
+                const binIdx = Math.min(Math.floor((spd / maxSpeed) * numBins), numBins - 1);
+                bins[binIdx]++;
+            });
+
+            // Update stats DOM
+            const avgKE = (totalKE / (particles.length || 1)).toFixed(2);
+            document.getElementById('stat-avg-ke').innerText = avgKE;
+            document.getElementById('stat-transitions').innerText = transitionCount;
+            document.getElementById('particle-count').innerText = particles.length;
+
+            // Draw Histogram Bars
+            const barWidth = chartCanvas.width / numBins;
+            const maxBinVal = Math.max(...bins, 10);
+
+            for (let i = 0; i < numBins; i++) {
+                const barHeight = (bins[i] / maxBinVal) * (chartCanvas.height - 20);
+                const x = i * barWidth;
+                const y = chartCanvas.height - barHeight - 15;
+
+                // Color based on speed bin
+                const speedVal = (i / numBins) * maxSpeed;
+                const norm = Math.min(speedVal / 8, 1);
+                let color = '#06b6d4';
+                if (norm > 0.8) color = '#fbbf24';
+                else if (norm > 0.6) color = '#f43f5e';
+                else if (norm > 0.4) color = '#a855f7';
+
+                chartCtx.fillStyle = color;
+                chartCtx.fillRect(x + 1, y, barWidth - 2, barHeight);
+            }
+
+            // Draw Escape Energy Threshold Line
+            const thresholdX = (Math.sqrt(2 * ESCAPE_ENERGY_THRESHOLD) / maxSpeed) * chartCanvas.width;
+            chartCtx.beginPath();
+            chartCtx.setLineDash([3, 3]);
+            chartCtx.moveTo(thresholdX, 0);
+            chartCtx.lineTo(thresholdX, chartCanvas.height - 15);
+            chartCtx.strokeStyle = '#f43f5e';
+            chartCtx.lineWidth = 2;
+            chartCtx.stroke();
+            chartCtx.setLineDash([]);
+
+            // Draw axis line
+            chartCtx.beginPath();
+            chartCtx.moveTo(0, chartCanvas.height - 15);
+            chartCtx.lineTo(chartCanvas.width, chartCanvas.height - 15);
+            chartCtx.strokeStyle = '#475569';
+            chartCtx.lineWidth = 1;
+            chartCtx.stroke();
+            
+            chartCtx.fillStyle = '#94a3b8';
+            chartCtx.font = '9px Inter';
+            chartCtx.fillText('0 (Slow)', 2, chartCanvas.height - 3);
+            chartCtx.fillText('Speed (v)', chartCanvas.width / 2 - 20, chartCanvas.height - 3);
+            chartCtx.fillText('High', chartCanvas.width - 25, chartCanvas.height - 3);
+        }
+
+        // Draw Container Bounds / Boundaries Visuals
+        function drawBoundaries() {
+            // Liquid surface indicator line if in evaporation/condensation mode
+            if (currentMode === 'evaporation' || currentMode === 'condensation') {
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(40, height * 0.65);
+                ctx.lineTo(width - 40, height * 0.65);
+                ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+                ctx.setLineDash([6, 6]);
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(147, 197, 253, 0.6)';
+                ctx.font = '11px Inter';
+                ctx.fillText('Liquid Phase Surface Layer', 55, height * 0.65 - 8);
+                ctx.restore();
+            } else if (currentMode === 'sublimation' || currentMode === 'deposition') {
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(80, height * 0.72);
+                ctx.lineTo(width - 80, height * 0.72);
+                ctx.strokeStyle = 'rgba(168, 85, 247, 0.3)';
+                ctx.setLineDash([4, 4]);
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(216, 180, 254, 0.6)';
+                ctx.font = '11px Inter';
+                ctx.fillText('Crystal Lattice Boundary', 95, height * 0.72 - 8);
+                ctx.restore();
+            }
+        }
+
+        // Main Physics & Render Loop
+        function animate() {
+            if (!isPaused) {
+                ctx.clearRect(0, 0, width, height);
+
+                drawBoundaries();
+
+                // Update & Draw Particles
+                particles.forEach(p => p.update());
+                resolveCollisions();
+                particles.forEach(p => p.draw(ctx));
+
+                // Draw speed distribution histogram
+                drawSpeedDistributionChart();
+            }
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Pause / Play Toggle
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseIcon = document.getElementById('pause-icon');
+            const pauseText = document.getElementById('pause-text');
+            if (isPaused) {
+                pauseIcon.className = 'fa-solid fa-play';
+                pauseText.innerText = 'Resume';
+            } else {
+                pauseIcon.className = 'fa-solid fa-pause';
+                pauseText.innerText = 'Pause';
+            }
+        }
+
+        // Reset Simulation
+        function resetSimulation() {
+            setPreset(currentMode);
+        }
+
+        // On Window Resize
+        window.addEventListener('resize', () => {
+            resize();
+            resetSimulation();
+        });
+
+        // Interactive Click/Touch to add kinetic energy boost to clicked particle
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            particles.forEach(p => {
+                const dist = Math.hypot(p.x - clickX, p.y - clickY);
+                if (dist < 40) {
+                    // Inject energetic burst into tapped molecules
+                    p.vx += (Math.random() - 0.5) * 8;
+                    p.vy -= Math.random() * 6 + 2; // Upward kick
+                    p.highlightTimer = 40;
+                }
+            });
+        });
+
+        // Initialize on load
+        window.onload = function() {
+            resize();
+            setPreset('evaporation');
+            animate();
+        };
+    </script>
+</body>
+</html>
